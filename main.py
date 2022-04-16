@@ -105,12 +105,6 @@ def create_virtual_machine(vm: VirtualMachine):
     return {"Status": "Virtual Machine created!"}
 
 
-@app.get('/api/get_terraform_code')
-def get_terraform_code():
-    print(project_path)
-    return 
-
-
 @app.post('/api/upload_file_to_s3/{username}/{project}')
 def upload_file_s3(username, project):
     os.system(f'aws s3 cp {project_path}/ s3://arquivosterraform/{username}/{project} --recursive --exclude ".terraform*"')

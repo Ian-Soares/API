@@ -20,18 +20,18 @@ def security_group_script(sg: classes.SecurityGroup):
 	  location            = azurerm_resource_group.{sg.rg}.location
 	  resource_group_name = azurerm_resource_group.{sg.rg}.name
 	}}
-	
+
 	locals {{
 	  {sg.rule_name}_{sg.rule_direction}_ports_map = {{
 	''')
-	
+
 	for i in range(len(sg.rule_dest_port_range_list)):
-			sg_script = sg_script + f'    "{sg.rule_priority_list[i]}" : "{sg.rule_dest_port_range_list[i]}", \n'
-	
+		sg_script = sg_script + f'    "{sg.rule_priority_list[i]}" : "{sg.rule_dest_port_range_list[i]}", \n'
+
 	sg_script = sg_script + textwrap.dedent(f'''
 	  }}
 	}}
-	
+
 	# Creating Network Security Rule
 	resource "azurerm_network_security_rule" "{sg.rule_name}" {{
 	  for_each = local.{sg.rule_name}_{sg.rule_direction}_ports_map
@@ -89,7 +89,7 @@ def nat_gateway_script(nat_gtw: classes.NatGateway):
 	  sku                 = "Standard"
 	  zones               = ["1"]
 	}}
-	
+
 	# Public IP Prefix
 	resource "azurerm_public_ip_prefix" "{nat_gtw.name}-public-ip-prefix" {{
 	  name                = "{nat_gtw.name}-public-ip-prefix"
@@ -98,7 +98,7 @@ def nat_gateway_script(nat_gtw: classes.NatGateway):
 	  prefix_length       = 30
 	  zones               = ["1"]
 	}}
-	
+
 	# Creating NAT Gateway
 	resource "azurerm_nat_gateway" "{nat_gtw.name}" {{
 	  name                    = "{nat_gtw.name}"
@@ -108,13 +108,13 @@ def nat_gateway_script(nat_gtw: classes.NatGateway):
 	  idle_timeout_in_minutes = 10
 	  zones                   = ["1"]
 	}}
-	
+
 	# Associating NAT Gateway to Public IP
 	resource "azurerm_nat_gateway_public_ip_association" "{nat_gtw.name}-public-ip" {{
 	  nat_gateway_id       = azurerm_nat_gateway.{nat_gtw.name}.id
 	  public_ip_address_id = azurerm_public_ip.{nat_gtw.name}-public-ip.id
 	}}
-	
+
 	# Associating NAT Gateway to Public IP Prefix
 	resource "azurerm_nat_gateway_public_ip_prefix_association" "{nat_gtw.name}" {{
 	  nat_gateway_id      = azurerm_nat_gateway.{nat_gtw.name}.id
@@ -141,10 +141,10 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
 	  location            = azurerm_resource_group.{vm.rg}.location
 	  resource_group_name = azurerm_resource_group.{vm.rg}.name
 	  ip_configuration {{
-	    name                          = "{vm.name}-ip-config"
-	    subnet_id                     = azurerm_subnet.{vm.subnet}.id
-	    private_ip_address_allocation = "Dynamic"
-	    public_ip_address_id = azurerm_public_ip.{vm.name}-public-ip.id
+	  name                          = "{vm.name}-ip-config"
+	  subnet_id                     = azurerm_subnet.{vm.subnet}.id
+	  private_ip_address_allocation = "Dynamic"
+	  public_ip_address_id = azurerm_public_ip.{vm.name}-public-ip.id
 	  }}
 	}}
 
@@ -156,24 +156,25 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
 	  network_interface_ids = [azurerm_network_interface.{vm.nic}.id]
 	  vm_size               = "Standard_DS1_v2"
 	  storage_image_reference {{
-	    publisher = "{vm.image[0]}"
-	    offer     = "{vm.image[1]}"
-	    sku       = "{vm.image[2]}"
-	    version   = "{vm.image[3]}"
+	  publisher = "{vm.image[0]}"
+	  offer     = "{vm.image[1]}"
+	  sku       = "{vm.image[2]}"
+	  version   = "{vm.image[3]}"
 	  }}
-	
+
 	  storage_os_disk {{
 	    name              = "{vm.name}-osdisk"
 	    caching           = "ReadWrite"
 	    create_option     = "FromImage"
 	    managed_disk_type = "Standard_LRS"
 	  }}
-
+  
 	  os_profile {{
 	    computer_name  = "{vm.hostname}"
 	    admin_username = "{vm.username}"
 	    admin_password = "{vm.password}"
 	  }}
+	  
 	  os_profile_linux_config {{
 	    disable_password_authentication = false
 	  }}
@@ -187,18 +188,18 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
 	#     admin_ssh_key {{
 	#       username = ""
 	#       public_key = file("/terraform_api_dirs/{username}/ssh_keys/key_{vm.public_key}")
-    #     }}
+	#     }}
 	#   }}
 	# ''')
-	
+
 	vm_script = vm_script + textwrap.dedent(f'''
 	  tags = {{
 	    name = "{vm.name}"
 	  }}
 	''')
-	
+
 	if vm.custom_data != None:
-			vm_script = vm_script + f'  custom_data = filebase64("{vm.custom_data}") \n'
+		vm_script = vm_script + f'  custom_data = filebase64("{vm.custom_data}") \n'
 	vm_script = vm_script + '}'
-	
+
 	return vm_script

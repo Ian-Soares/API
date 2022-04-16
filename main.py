@@ -1,10 +1,38 @@
 from fastapi import FastAPI
-import os
+import os, subprocess, shutil
 from classes import *
 from functions import *
 from provider import provider_block_script
 
-app = FastAPI(title="DrawAndDeployAPI")
+app = FastAPI(title="Draw and Deploy API")
+
+
+@app.get('/api/get_local_users')
+def get_users():
+    return os.listdir('/terraform_api_dirs')
+
+
+@app.get('/api/get_local_projects/{user}')
+def get_projects(user):
+    return os.listdir(f'/terraform_api_dirs/{user}')
+
+
+@app.get('/api/get_s3_users')
+def get_s3_users():
+    users_list = str(subprocess.check_output('aws s3 ls s3://arquivosterraform', shell=True)).split('PRE ')
+    for item in range(len(users_list)):
+        users_list[item] = users_list[item].strip().replace('\\n', '').replace("'", "").replace('/', '')
+    users_list.pop(0)
+    return users_list
+
+
+@app.get('/api/get_s3_projects/{user}')
+def get_s3_projects(user):
+    projects_list = str(subprocess.check_output(f'aws s3 ls s3://arquivosterraform/{user}/', shell=True)).split('PRE ')
+    for item in range(len(projects_list)):
+        projects_list[item] = projects_list[item].strip().replace('\\n', '').replace("'", "").replace('/', '')
+    projects_list.pop(0)
+    return projects_list
 
 
 @app.post('/api/create_project/{username}/{project_name}')
@@ -13,6 +41,7 @@ def create_new_project(username, project_name):
     user, project = username, project_name
     project_path = f'/terraform_api_dirs/{username}/{project_name}'
     os.makedirs(f'{project_path}')
+    os.system(f'touch /terraform_api_dirs/{username}/{project_name}/init_project.txt')
     return {"Status": "Project created!"}
 
 
@@ -40,7 +69,7 @@ def set_account_credentials(useracc: UserAccount):
 
 @app.delete('/api/delete_project/{username}/{project_name}')
 def delete_existing_project(username, project_name):
-    os.rmdir(f'/terraform_api_dirs/{username}/{project_name}')
+    shutil.rmtree(f'/terraform_api_dirs/{username}/{project_name}')
     return {"Status": "Project deleted!"}
 
 
@@ -110,6 +139,11 @@ def upload_file_s3(username, project):
     os.system(f'aws s3 cp {project_path}/ s3://arquivosterraform/{username}/{project} --recursive --exclude ".terraform*"')
     return {"Status": "Your file was uploaded!"}
 
+
+@app.delete('/api/delete_project_folder_in_s3/{username}/{project}')
+def delete_project_folder_in_s3(username, project):
+    os.system(f'aws s3 rm s3://arquivosterraform/{username}/{project} --recursive')
+    return {"Status": "Folder deleted!"}
 
 @app.post('/api/apply')
 def apply_infrastructure():

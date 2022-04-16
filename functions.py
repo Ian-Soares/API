@@ -28,8 +28,8 @@ def security_group_script(sg: classes.SecurityGroup):
     for i in range(len(sg.rule_dest_port_range_list)):
     	sg_script = sg_script + f'    "{sg.rule_priority_list[i]}" : "{sg.rule_dest_port_range_list[i]}", \n'
 
-    sg_script = sg_script + textwrap.dedent(f'''
-      }}
+    sg_script = sg_script + textwrap.dedent(
+    f'''  }}
     }}
 
     # Creating Network Security Rule
@@ -141,10 +141,10 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
       location            = azurerm_resource_group.{vm.rg}.location
       resource_group_name = azurerm_resource_group.{vm.rg}.name
       ip_configuration {{
-      name                          = "{vm.name}-ip-config"
-      subnet_id                     = azurerm_subnet.{vm.subnet}.id
-      private_ip_address_allocation = "Dynamic"
-      public_ip_address_id = azurerm_public_ip.{vm.name}-public-ip.id
+        name                          = "{vm.name}-ip-config"
+        subnet_id                     = azurerm_subnet.{vm.subnet}.id
+        private_ip_address_allocation = "Dynamic"
+        public_ip_address_id = azurerm_public_ip.{vm.name}-public-ip.id
       }}
     }}
     
@@ -156,10 +156,10 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
       network_interface_ids = [azurerm_network_interface.{vm.nic}.id]
       vm_size               = "Standard_DS1_v2"
       storage_image_reference {{
-      publisher = "{vm.image[0]}"
-      offer     = "{vm.image[1]}"
-      sku       = "{vm.image[2]}"
-      version   = "{vm.image[3]}"
+        publisher = "{vm.image[0]}"
+        offer     = "{vm.image[1]}"
+        sku       = "{vm.image[2]}"
+        version   = "{vm.image[3]}"
       }}
 
       storage_os_disk {{
@@ -192,7 +192,8 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
     #   }}
     # ''')
     
-    vm_script = vm_script + textwrap.dedent(f'''
+    vm_script = vm_script + textwrap.dedent(
+    f'''
       tags = {{
         name = "{vm.name}"
       }}

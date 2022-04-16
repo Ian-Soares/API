@@ -183,7 +183,7 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
     # if vm.public_key != None:
     # 	vm_script = vm_script + textwrap.dedent(f'''
     #   os_profile_linux_config {{
-#     disable_password_authentication = true
+    #     disable_password_authentication = true
     #     admin_username      = "{vm.username}"
     #     admin_ssh_key {{
     #       username = ""

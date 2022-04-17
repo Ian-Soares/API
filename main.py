@@ -7,14 +7,22 @@ from provider import provider_block_script
 app = FastAPI(title="Draw and Deploy API")
 
 
-@app.get('/api/get_local_users')
-def get_users():
-    return os.listdir('/terraform_api_dirs')
+@app.post('/api/create_user')
+def create_user(username):
+    if not os.path.exists(f'/terraform_api_dirs/{username}/'):
+        os.makedirs(f'/terraform_api_dirs/{username}/init_user/')
+        os.system(f'touch /terraform_api_dirs/{username}/init_user/init.txt')
+        os.system(f'aws s3 cp /terraform_api_dirs/{username}/ s3://arquivosterraform/{username}/ --recursive')
+        return {"Status": "User created!"}
+    else:
+        return {"Error": "User already exists!"}
 
 
-@app.get('/api/get_local_projects/{user}')
-def get_projects(user):
-    return os.listdir(f'/terraform_api_dirs/{user}')
+@app.delete('/api/delete_user')
+def delete_user(username):
+    shutil.rmtree(f'/terraform_api_dirs/{username}')
+    os.system(f'aws s3 rm s3://arquivosterraform/{username}/ --recursive')
+    return {"Status": "User deleted!"}
 
 
 @app.get('/api/get_s3_users')
@@ -26,12 +34,13 @@ def get_s3_users():
     return users_list
 
 
-@app.get('/api/get_s3_projects/{user}')
-def get_s3_projects(user):
-    projects_list = str(subprocess.check_output(f'aws s3 ls s3://arquivosterraform/{user}/', shell=True)).split('PRE ')
+@app.get('/api/get_s3_projects/{username}')
+def get_s3_projects(username):
+    projects_list = str(subprocess.check_output(f'aws s3 ls s3://arquivosterraform/{username}/', shell=True)).split('PRE ')
     for item in range(len(projects_list)):
-        projects_list[item] = projects_list[item].strip().replace('\\n', '').replace("'", "").replace('/', '')
+        projects_list[item] = projects_list[item].strip().replace('\\n', '').replace("'", "").replace('/', '')      
     projects_list.pop(0)
+    projects_list.remove('init_user')
     return projects_list
 
 
@@ -39,18 +48,38 @@ def get_s3_projects(user):
 def create_new_project(username, project_name):
     global project_path, user, project
     user, project = username, project_name
-    project_path = f'/terraform_api_dirs/{username}/{project_name}'
-    os.makedirs(f'{project_path}')
-    os.system(f'touch /terraform_api_dirs/{username}/{project_name}/init_project.txt')
-    return {"Status": "Project created!"}
+    if project_name != "init_project":
+        if not os.path.exists(f'/terraform_api_dirs/{user}/{user}/'):
+            project_path = f'/terraform_api_dirs/{username}/{project_name}'
+            os.makedirs(f'{project_path}/init_project/')
+            os.system(f'touch /terraform_api_dirs/{username}/{project_name}/init_project/init.txt')
+            os.system(f'aws s3 cp {project_path}/ s3://arquivosterraform/{username}/{project}/ --recursive --exclude ".terraform*"')
+            return {"Status": "Project created!"}
+        else:
+            return {"Error": "Project already exists!"}
+    else:
+        return {"Error": "You cannot create an project named 'init_project'"}
 
 
-@app.put('/api/use_existing_project/{username}/{project_name}')
+@app.delete('/api/delete_project/{username}/{project_name}')
+def delete_existing_project(username, project_name):
+    shutil.rmtree(f'/terraform_api_dirs/{username}/{project_name}')
+    os.system(f'aws s3 rm s3://arquivosterraform/{username}/{project_name} --recursive')
+    return {"Status": "Project deleted!"}
+
+
+@app.put('/api/use_existing_local_project/{username}/{project_name}')
 def use_existing_project(username, project_name):
     global project_path, user, project
     user, project = username, project_name
     project_path = f'/terraform_api_dirs/{username}/{project_name}'
     return {"Status": "Done!"}
+
+
+@app.post('/api/pull_existing_project')
+def pull_existing_project_in_s3(username, project):
+    os.system(f'aws s3 sync s3://arquivosterraform/{username}/{project}/ /terraform_api_dirs/{username}/{project}/ --exclude "init_project"')
+    return {"Status": "File pulled from S3 Bucket!"}
 
 
 @app.post('/api/account_credentials')
@@ -65,12 +94,6 @@ def set_account_credentials(useracc: UserAccount):
     terraform_file = open(f'{project_path}/main.tf', 'a+')
     terraform_file.write(account_settings)
     return {"Status": "Account authenticated!"}
-
-
-@app.delete('/api/delete_project/{username}/{project_name}')
-def delete_existing_project(username, project_name):
-    shutil.rmtree(f'/terraform_api_dirs/{username}/{project_name}')
-    return {"Status": "Project deleted!"}
 
 
 @app.delete('/api/clear_script')
@@ -139,11 +162,6 @@ def upload_file_s3(username, project):
     os.system(f'aws s3 cp {project_path}/ s3://arquivosterraform/{username}/{project} --recursive --exclude ".terraform*"')
     return {"Status": "Your file was uploaded!"}
 
-
-@app.delete('/api/delete_project_folder_in_s3/{username}/{project}')
-def delete_project_folder_in_s3(username, project):
-    os.system(f'aws s3 rm s3://arquivosterraform/{username}/{project} --recursive')
-    return {"Status": "Folder deleted!"}
 
 @app.post('/api/apply')
 def apply_infrastructure():

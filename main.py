@@ -25,7 +25,7 @@ def delete_user(username):
     return {"Status": "User deleted!"}
 
 
-@app.get('/api/get_s3_users')
+@app.get('/api/get_users')
 def get_s3_users():
     users_list = str(subprocess.check_output('aws s3 ls s3://arquivosterraform', shell=True)).split('PRE ')
     for item in range(len(users_list)):
@@ -34,7 +34,7 @@ def get_s3_users():
     return users_list
 
 
-@app.get('/api/get_s3_projects/{username}')
+@app.get('/api/get_projects/{username}')
 def get_s3_projects(username):
     projects_list = str(subprocess.check_output(f'aws s3 ls s3://arquivosterraform/{username}/', shell=True)).split('PRE ')
     for item in range(len(projects_list)):
@@ -157,7 +157,7 @@ def create_virtual_machine(vm: VirtualMachine):
     return {"Status": "Virtual Machine created!"}
 
 
-@app.post('/api/upload_file_to_s3/{username}/{project}')
+@app.post('/api/upload_files_to_s3/{username}/{project}')
 def upload_file_s3(username, project):
     os.system(f'aws s3 cp {project_path}/ s3://arquivosterraform/{username}/{project} --recursive --exclude ".terraform*"')
     return {"Status": "Your file was uploaded!"}

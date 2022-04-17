@@ -178,6 +178,10 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
       os_profile_linux_config {{
         disable_password_authentication = false
       }}
+
+      tags = {{
+          name = "{vm.name}"
+      }}
     ''')
 
     # if vm.public_key != None:
@@ -192,13 +196,6 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
     #   }}
     # ''')
     
-    vm_script = vm_script + textwrap.dedent(
-    f'''
-      tags = {{
-        name = "{vm.name}"
-      }}
-    ''')
-
     if vm.custom_data != None:
     	vm_script = vm_script + f'  custom_data = filebase64("{vm.custom_data}") \n'
     vm_script = vm_script + '}'

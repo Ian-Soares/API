@@ -124,7 +124,7 @@ def nat_gateway_script(nat_gtw: classes.NatGateway):
     return nat_gtw_script
 
 
-def virtual_machine_script(vm: classes.VirtualMachine, username):
+def windows_virtual_machine_script(vm: classes.LinuxVirtualMachine, username):
     vm_script = textwrap.dedent(f'''
 
     # VM Public IP
@@ -148,25 +148,73 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
       }}
     }}
     
-    # Creating Virtual Machine
-    resource "azurerm_virtual_machine" "{vm.name}" {{
-      name                  = "{vm.name}"
-      location              = azurerm_resource_group.{vm.rg}.location
-      resource_group_name   = azurerm_resource_group.{vm.rg}.name
-      network_interface_ids = [azurerm_network_interface.{vm.nic}.id]
-      vm_size               = "Standard_DS1_v2"
-      storage_image_reference {{
+    # Windows Virtual Machine
+    resource "azurerm_windows_virtual_machine" "{vm.name}" {{
+      name                = "{vm.name}"
+      resource_group_name = azurerm_resource_group.{vm.rg}.name
+      location            = azurerm_resource_group.{vm.rg}.location
+      size                = "{vm.size}"
+      admin_username      = "{vm.username}"
+      admin_password      = "{vm.password}"
+      network_interface_ids = [
+        azurerm_network_interface.{vm.nic}.id,
+      ]
+
+      os_disk {{
+        caching              = "ReadWrite"
+        storage_account_type = "Standard_LRS"
+      }}
+
+      source_image_reference {{
         publisher = "{vm.image[0]}"
         offer     = "{vm.image[1]}"
         sku       = "{vm.image[2]}"
         version   = "{vm.image[3]}"
       }}
+    }}
+    ''')
+    
+    return vm_script
 
-      storage_os_disk {{
-        name              = "{vm.name}-osdisk"
-        caching           = "ReadWrite"
-        create_option     = "FromImage"
-        managed_disk_type = "Standard_LRS"
+def linux_virtual_machine_script(vm: classes.LinuxVirtualMachine):
+    vm_script = textwrap.dedent(f'''
+
+    # VM Public IP
+    resource "azurerm_public_ip" "{vm.name}-public-ip" {{
+      name                = "{vm.name}-public-ip"
+      resource_group_name = azurerm_resource_group.{vm.rg}.name
+      location            = azurerm_resource_group.{vm.rg}.location
+      allocation_method   = "Dynamic"
+    }}
+
+    # Network Interface 
+    resource "azurerm_network_interface" "{vm.nic}" {{
+      name                = "{vm.nic}"
+      location            = azurerm_resource_group.{vm.rg}.location
+      resource_group_name = azurerm_resource_group.{vm.rg}.name
+
+      ip_configuration {{
+        name                          = "{vm.name}-ip"
+        subnet_id                     = azurerm_subnet.{vm.subnet}.id
+        private_ip_address_allocation = "Dynamic"
+        public_ip_address_id = azurerm_public_ip.{vm.name}-public-ip.id
+      }}
+    }}
+
+    # Linux Virtual Machine
+    resource "azurerm_linux_virtual_machine" "{vm.name}" {{
+      name                = "{vm.name}"
+      resource_group_name = azurerm_resource_group.{vm.rg}.name
+      location            = azurerm_resource_group.{vm.rg}.location
+      size                = "{vm.size}"
+      admin_username      = "{vm.username}"
+      network_interface_ids = [
+        azurerm_network_interface.{vm.nic}.id,
+      ]
+
+      admin_ssh_key {{
+        username   = "{vm.username}"
+        public_key = file("{vm.public_key}")
       }}
 
       os_profile {{
@@ -174,9 +222,17 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
         admin_username = "{vm.username}"
         admin_password = "{vm.password}"
       }}
-    
-      os_profile_linux_config {{
-        disable_password_authentication = false
+
+      os_disk {{
+        caching              = "{vm.os_disk}"
+        storage_account_type = "{vm.storage_account_type}"
+      }}
+
+      source_image_reference {{
+        publisher = "{vm.image[0]}"
+        offer     = "{vm.image[1]}"
+        sku       = "{vm.image[2]}"
+        version   = "{vm.image[3]}"
       }}
 
       tags = {{
@@ -184,20 +240,9 @@ def virtual_machine_script(vm: classes.VirtualMachine, username):
       }}
     ''')
 
-    # if vm.public_key != None:
-    # 	vm_script = vm_script + textwrap.dedent(f'''
-    #   os_profile_linux_config {{
-    #     disable_password_authentication = true
-    #     admin_username      = "{vm.username}"
-    #     admin_ssh_key {{
-    #       username = ""
-    #       public_key = file("/terraform_api_dirs/{username}/ssh_keys/key_{vm.public_key}")
-    #     }}
-    #   }}
-    # ''')
-    
     if vm.custom_data != None:
     	vm_script = vm_script + f'  custom_data = filebase64("{vm.custom_data}") \n'
+    
     vm_script = vm_script + '}'
 
     return vm_script

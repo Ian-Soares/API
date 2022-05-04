@@ -1,7 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
 
-
 class UserAccount(BaseModel):
     not_student_account: Optional[bool] = False
     user_email: Optional[str] = 'useremail@example.com'
@@ -57,7 +56,23 @@ class PublicKey(BaseModel):
     public_key: str = 'ssh-rsa haNsak192s-anomad9267382nsjkn...'
 
 
-class VirtualMachine(BaseModel):
+class WindowsVirtualMachine(BaseModel):
+    name: str
+    rg: str
+    nsg: Optional[str] = "ExampleSG"
+    subnet: str = 'ExampleSubnet'
+    size: Optional[str] = 'Standard_DS1_v2'
+    username: Optional[str] = 'rootuser'
+    password: Optional[str] = '********'
+    hostname: Optional[str] = 'azurevm'
+    nic: Optional[str] = 'mynic'
+    os_disk_name: Optional[str] = 'osdisk'
+    os_caching: Optional[str] = 'ReadWrite'
+    storage_account_type: Optional[str] = 'Standard_LRS'
+    image: Optional[list] = ['MicrosoftWindowsServer', 'WindowsServer', '2016-Datacenter', 'latest']
+
+
+class LinuxVirtualMachine(BaseModel):
     name: str
     rg: str
     nsg: Optional[str] = "ExampleSG"

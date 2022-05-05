@@ -224,7 +224,7 @@ def linux_virtual_machine_script(vm: classes.LinuxVirtualMachine):
       }}
 
       os_disk {{
-        caching              = "{vm.os_disk}"
+        caching              = "{vm.os_disk_name}"
         storage_account_type = "{vm.storage_account_type}"
       }}
 

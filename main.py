@@ -3,8 +3,24 @@ import os, subprocess, shutil
 from classes import *
 from functions import *
 from provider import provider_block_script
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Draw and Deploy API")
+
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post('/api/create_user/{username}')
 def create_user(username):

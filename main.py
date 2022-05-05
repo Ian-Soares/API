@@ -145,14 +145,14 @@ def create_nat_gateway(nat_gtw: NatGateway, username, project_name):
 @app.post('/api/windows_virtual_machine/{username}/{project_name}')
 def create_virtual_machine(vm: WindowsVirtualMachine, username, project_name):
     terraform_file = open(f'/terraform_api_dirs/{username}/{project_name}/main.tf', 'a+')
-    terraform_file.write(windows_virtual_machine_script(vm, username))
+    terraform_file.write(windows_virtual_machine_script(vm))
     return {"Status": "Virtual Machine created!"}
 
 
 @app.post('/api/linux_virtual_machine/{username}/{project_name}')
 def create_virtual_machine(vm: LinuxVirtualMachine, username, project_name):
     terraform_file = open(f'/terraform_api_dirs/{username}/{project_name}/main.tf', 'a+')
-    terraform_file.write(linux_virtual_machine_script(vm, username))
+    terraform_file.write(linux_virtual_machine_script(vm))
     return {"Status": "Virtual Machine created!"}
 
 

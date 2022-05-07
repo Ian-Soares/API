@@ -214,7 +214,7 @@ def linux_virtual_machine_script(vm: classes.LinuxVirtualMachine):
 
       admin_ssh_key {{
         username   = "{vm.username}"
-        public_key = file("{vm.public_key}")
+        public_key = file("../ssh_keys/{vm.public_key}.pub")
       }}
 
       os_profile {{
@@ -238,11 +238,7 @@ def linux_virtual_machine_script(vm: classes.LinuxVirtualMachine):
       tags = {{
           name = "{vm.name}"
       }}
+    }}
     ''')
-
-    if vm.custom_data != None:
-    	vm_script = vm_script + f'  custom_data = filebase64("{vm.custom_data}") \n'
-    
-    vm_script = vm_script + '}'
 
     return vm_script

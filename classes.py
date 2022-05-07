@@ -1,6 +1,16 @@
 from typing import Optional
 from pydantic import BaseModel
 
+
+class User(BaseModel):
+    username: Optional[str] = "Username"
+
+
+class Project(BaseModel):
+    username: Optional[str] = "Username"
+    project_name: Optional[str] = "ProjectX"
+
+
 class UserAccount(BaseModel):
     not_student_account: Optional[bool] = False
     user_email: Optional[str] = 'useremail@example.com'
@@ -53,7 +63,7 @@ class NatGateway(BaseModel):
 
 class PublicKey(BaseModel):
     key_name: str = "ExamplePublicKey"
-    public_key: str = 'ssh-rsa haNsak192s-anomad9267382nsjkn...'
+    public_key: Optional[str] = 'ssh-rsa haNsak192s-anomad9267382nsjkn...'
 
 
 class WindowsVirtualMachine(BaseModel):
@@ -88,4 +98,3 @@ class LinuxVirtualMachine(BaseModel):
     storage_account_type: Optional[str] = 'Standard_LRS'
     image: Optional[list] = ['Canonical', '0001-com-ubuntu-server-focal', '20_04-lts-gen2', 'latest']
     custom_data: Optional[str] = None
-

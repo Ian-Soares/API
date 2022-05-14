@@ -124,7 +124,7 @@ def nat_gateway_script(nat_gtw: classes.NatGateway):
     return nat_gtw_script
 
 
-def windows_virtual_machine_script(vm: classes.LinuxVirtualMachine, username):
+def windows_virtual_machine_script(vm: classes.LinuxVirtualMachine):
     vm_script = textwrap.dedent(f'''
 
     # VM Public IP

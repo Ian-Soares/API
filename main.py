@@ -155,7 +155,9 @@ def create_ssh_public_key(key: PublicKey, project: Project):
         os.makedirs(f'/drawanddeploy/{project.username}/ssh_keys/')
     os.system(f'ssh-keygen -b 2048 -t rsa -f /drawanddeploy/{project.username}/ssh_keys/{key.key_name} -q -N ""')
     os.system(f'aws s3 cp /drawanddeploy/{project.username}/ssh_keys/ s3://drawanddeploy/{project.username}/ssh_keys --region=us-east-1 --recursive')
-    return {"Status": "SSH Public Key created!"}
+    temporary_link = str(subprocess.check_output(f'aws s3 presign s3://drawanddeploy/{project.username}/ssh_keys/{key.key_name} --expires-in 90 --region=us-east-1', shell=True))
+    temporary_link = temporary_link[2:-3]
+    return {"Link": f"{temporary_link}"}
 
 
 @app.post('/api/nat_gateway/')

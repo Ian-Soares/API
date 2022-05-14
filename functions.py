@@ -136,8 +136,8 @@ def windows_virtual_machine_script(vm: classes.LinuxVirtualMachine, username):
     }}
     
     # Network Interface for VM
-    resource "azurerm_network_interface" "{vm.nic}" {{
-      name                = "{vm.nic}-nic"
+    resource "azurerm_network_interface" "{vm.name}-nic" {{
+      name                = "{vm.name}-nic"
       location            = azurerm_resource_group.{vm.rg}.location
       resource_group_name = azurerm_resource_group.{vm.rg}.name
       ip_configuration {{
@@ -157,10 +157,11 @@ def windows_virtual_machine_script(vm: classes.LinuxVirtualMachine, username):
       admin_username      = "{vm.username}"
       admin_password      = "{vm.password}"
       network_interface_ids = [
-        azurerm_network_interface.{vm.nic}.id,
+        azurerm_network_interface.{vm.name}-nic.id,
       ]
 
       os_disk {{
+        name                 = "osdisk-{vm.name}"
         caching              = "ReadWrite"
         storage_account_type = "Standard_LRS"
       }}
@@ -188,8 +189,8 @@ def linux_virtual_machine_script(vm: classes.LinuxVirtualMachine):
     }}
 
     # Network Interface 
-    resource "azurerm_network_interface" "{vm.nic}" {{
-      name                = "{vm.nic}"
+    resource "azurerm_network_interface" "{vm.name}-nic" {{
+      name                = "{vm.name}-nic"
       location            = azurerm_resource_group.{vm.rg}.location
       resource_group_name = azurerm_resource_group.{vm.rg}.name
 
@@ -209,7 +210,7 @@ def linux_virtual_machine_script(vm: classes.LinuxVirtualMachine):
       size                = "{vm.size}"
       admin_username      = "{vm.username}"
       network_interface_ids = [
-        azurerm_network_interface.{vm.nic}.id,
+        azurerm_network_interface.{vm.name}-nic.id,
       ]
 
       admin_ssh_key {{
@@ -217,15 +218,10 @@ def linux_virtual_machine_script(vm: classes.LinuxVirtualMachine):
         public_key = file("../ssh_keys/{vm.public_key}.pub")
       }}
 
-      os_profile {{
-        computer_name  = "{vm.hostname}"
-        admin_username = "{vm.username}"
-        admin_password = "{vm.password}"
-      }}
-
       os_disk {{
-        caching              = "{vm.os_disk_name}"
-        storage_account_type = "{vm.storage_account_type}"
+        name                 = "osdisk-{vm.name}"
+        caching              = "ReadWrite"
+        storage_account_type = "Standard_LRS"
       }}
 
       source_image_reference {{

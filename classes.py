@@ -46,6 +46,7 @@ class VirtualNetwork(BaseModel):
     name: str
     rg: str
     cidr_block: str = '10.0.0.0/16'
+    dns_servers: Optional[list] = None
 
 
 class Subnet(BaseModel):
@@ -74,10 +75,6 @@ class WindowsVirtualMachine(BaseModel):
     username: Optional[str] = 'rootuser'
     password: Optional[str] = '********'
     hostname: Optional[str] = 'azurevm'
-    nic: Optional[str] = 'mynic'
-    os_disk_name: Optional[str] = 'osdisk'
-    os_caching: Optional[str] = 'ReadWrite'
-    storage_account_type: Optional[str] = 'Standard_LRS'
     image: Optional[list] = ['MicrosoftWindowsServer', 'WindowsServer', '2016-Datacenter', 'latest']
 
 
@@ -89,11 +86,4 @@ class LinuxVirtualMachine(BaseModel):
     public_key: Optional[str] = 'ExamplePublicKey'
     size: Optional[str] = 'Standard_DS1_v2'
     username: Optional[str] = 'rootuser'
-    password: Optional[str] = '********'
-    hostname: Optional[str] = 'azurevm'
-    nic: Optional[str] = 'mynic'
-    os_disk_name: Optional[str] = 'osdisk'
-    os_caching: Optional[str] = 'ReadWrite'
-    storage_account_type: Optional[str] = 'Standard_LRS'
     image: Optional[list] = ['Canonical', '0001-com-ubuntu-server-focal', '20_04-lts-gen2', 'latest']
-    custom_data: Optional[str] = None

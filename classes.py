@@ -46,7 +46,6 @@ class VirtualNetwork(BaseModel):
     name: str
     rg: str
     cidr_block: str = '10.0.0.0/16'
-    dns_servers: Optional[list] = None
 
 
 class Subnet(BaseModel):

@@ -45,18 +45,22 @@ def delete_user(user: User):
 
 @app.get('/api/get_users/')
 def get_s3_users():
-    users_list = str(subprocess.check_output('aws s3 ls s3://drawanddeploy --region=us-east-1', shell=True)).split('PRE ')
+    output = subprocess.Popen(['aws', 's3', 'ls', 's3://drawanddeploy', '--region=us-east-1'], stdout=subprocess.PIPE)
+    response, error = output.communicate()
+    users_list = str(response).split('PRE')
     for item in range(len(users_list)):
-        users_list[item] = users_list[item].strip().replace('\\n', '').replace("'", "").replace('/', '')
+        users_list[item] = users_list[item].strip().replace('\\n','').replace('/','').replace("'",'')
     users_list.pop(0)
     return users_list
 
 
 @app.get('/api/get_projects/{username}/')
 def get_s3_projects(username):
-    projects_list = str(subprocess.check_output(f'aws s3 ls s3://drawanddeploy/{username}/ --region=us-east-1', shell=True)).split('PRE ')
+    output = subprocess.Popen(['aws', 's3', 'ls', f's3://drawanddeploy/{username}/', '--region=us-east-1'], stdout=subprocess.PIPE)
+    response, error = output.communicate()
+    projects_list = str(response).split('PRE')
     for item in range(len(projects_list)):
-        projects_list[item] = projects_list[item].strip().replace('\\n', '').replace("'", "").replace('/', '')      
+        projects_list[item] = projects_list[item].strip().replace('\\n','').replace('/','').replace("'", '')
     projects_list.pop(0)
     projects_list.remove('init_user')
     try:
@@ -106,7 +110,7 @@ def set_account_credentials(useracc: UserAccount, project: Project):
         account_settings = provider_block_script(useracc.subscription_id, useracc.client_id, useracc.client_secret, useracc.tenant_id, service_principal=True)
     else:
         account_settings = provider_block_script()
-    terraform_file = open(f'/drawanddeploy/{project.username}/{project.project_name}/main.tf', 'a+')
+    terraform_file = open(f'/drawanddeploy/{project.username}/{project.project_name}/provider.tf', 'a+')
     terraform_file.write(account_settings)
     return {"Status": "Account authenticated!"}
 
@@ -155,7 +159,9 @@ def create_ssh_public_key(key: PublicKey, project: Project):
         os.makedirs(f'/drawanddeploy/{project.username}/ssh_keys/')
     os.system(f'ssh-keygen -b 2048 -t rsa -f /drawanddeploy/{project.username}/ssh_keys/{key.key_name} -q -N ""')
     os.system(f'aws s3 cp /drawanddeploy/{project.username}/ssh_keys/ s3://drawanddeploy/{project.username}/ssh_keys --region=us-east-1 --recursive')
-    temporary_link = str(subprocess.check_output(f'aws s3 presign s3://drawanddeploy/{project.username}/ssh_keys/{key.key_name} --expires-in 90 --region=us-east-1', shell=True))
+    output = subprocess.Popen(['aws', 's3', 'presign', f's3://drawanddeploy/{project.username}/ssh_keys/{key.key_name}', '--expires-in', '90', '--region=us-east-1'], stdout=subprocess.PIPE)
+    response, error = output.communicate()
+    temporary_link = str(response)
     temporary_link = temporary_link[2:-3]
     return {"Link": f"{temporary_link}"}
 
@@ -181,10 +187,14 @@ def create_virtual_machine(vm: LinuxVirtualMachine, project: Project):
     return {"Status": "Virtual Machine created!"}
 
 
-@app.post('/api/upload_files_to_s3/')
-def upload_file_s3(project: Project):
-    os.system(f'aws s3 cp /drawanddeploy/{project.username}/{project.project_name}/ s3://drawanddeploy/{project.username}/{project.project_name} --region=us-east-1 --recursive --exclude ".terraform*"')
-    return {"Status": "Your file was uploaded!"}
+@app.get('/api/get_script/{username}/{project}/')
+def get_script_terraform(username, project):
+    os.system(f'aws s3 cp /drawanddeploy/{username}/{project}/ s3://drawanddeploy/{username}/{project} --region=us-east-1 --recursive --exclude ".terraform*"')
+    output = subprocess.Popen(['aws', 's3', 'presign', f's3://drawanddeploy/{username}/{project}/main.tf', '--expires-in', '3600', '--region=us-east-1'], stdout=subprocess.PIPE)
+    response, error = output.communicate()
+    script_link = str(response)
+    script_link = script_link[2:-3]
+    return {"Link": f"{script_link}"}
 
 
 @app.post('/api/apply/')
@@ -192,7 +202,12 @@ def apply_infrastructure(project: Project):
     os.chdir(f'/drawanddeploy/{project.username}/{project.project_name}')
     os.system('terraform init')
     os.system('terraform apply --auto-approve')
-    return {"Status": "Infrastructure deployed!"}
+    os.system(f'aws s3 cp /drawanddeploy/{project.username}/{project.project_name}/ s3://drawanddeploy/{project.username}/{project.project_name} --region=us-east-1 --recursive --exclude ".terraform*"')
+    output = subprocess.Popen(['aws', 's3', 'presign', f's3://drawanddeploy/{project.username}/{project.project_name}/main.tf', '--expires-in', '3600', '--region=us-east-1'], stdout=subprocess.PIPE)
+    response, error = output.communicate()
+    script_link = str(response)
+    script_link = script_link[2:-3]
+    return {"Link": f"{script_link}"}
 
 
 @app.delete('/api/destroy/')

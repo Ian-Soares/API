@@ -1,6 +1,6 @@
 import textwrap
 
-def provider_block_script(subscription_id = None, client_id = None, client_secret = None, tenant_id = None, service_principal = False):
+def provider_block_script(subscription_id = None, client_id = None, client_secret = None, tenant_id = None):
     provider_block = textwrap.dedent(f'''
     # Terraform and provider versions required
     terraform {{
@@ -20,7 +20,7 @@ def provider_block_script(subscription_id = None, client_id = None, client_secre
         }}
       }}
     ''')
-    if(service_principal):
+    if(subscription_id != None):
         provider_block = provider_block + textwrap.dedent(
       f'''
           subscription_id = "{subscription_id}"

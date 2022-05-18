@@ -12,11 +12,9 @@ class Project(BaseModel):
 
 
 class UserAccount(BaseModel):
-    not_student_account: Optional[bool] = False
     user_email: Optional[str] = 'useremail@example.com'
     user_password: Optional[str] = 'password'
     
-    service_principal: Optional[bool] = False
     subscription_id: Optional[str] = '0x10x01x-0x10-1x0x-110x-x0110xx011x0'
     client_id: Optional[str] = '0287381x-0t1d-1x0y-1y0x-xy210yz001x0'
     client_secret: Optional[str] = 'YBshj1826bsBusJsbsk91m'

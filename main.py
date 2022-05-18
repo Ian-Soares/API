@@ -105,11 +105,9 @@ def edit_existing_project_in_s3(project: Project):
 def set_account_credentials(useracc: UserAccount, project: Project):
     if(useracc.not_student_account):
         os.system(f'az login -u {useracc.user_email} -p {useracc.user_password}')
-        account_settings = provider_block_script(service_principal = False)
-    elif(useracc.service_principal):
-        account_settings = provider_block_script(useracc.subscription_id, useracc.client_id, useracc.client_secret, useracc.tenant_id, service_principal=True)
-    else:
         account_settings = provider_block_script()
+    else:
+        account_settings = provider_block_script(useracc.subscription_id, useracc.client_id, useracc.client_secret, useracc.tenant_id)
     terraform_file = open(f'/drawanddeploy/{project.username}/{project.project_name}/provider.tf', 'a+')
     terraform_file.write(account_settings)
     return {"Status": "Account authenticated!"}

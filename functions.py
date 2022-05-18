@@ -39,7 +39,7 @@ def security_group_script(sg: classes.SecurityGroup):
       priority                    = each.key
       direction                   = "{sg.rule_direction}"
       access                      = "{sg.rule_access}"
-      protocol                    = "{sg.rule_protocol}"
+      protocol                    = "{sg.rule_protocol.capitalize()}"
       source_port_range           = "{sg.rule_source_port_range}"
       destination_port_range      = each.value
       source_address_prefix       = "{sg.rule_source_address_prefix}"

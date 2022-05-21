@@ -72,8 +72,8 @@ def get_s3_projects(username):
     for item in range(len(projects_list)):
         projects_list[item] = projects_list[item].strip().replace('\\n','').replace('/','').replace("'", '')
     projects_list.pop(0)
-    projects_list.remove('init_user')
     try:
+        projects_list.remove('init_user')
         projects_list.remove('ssh_keys')
     except:
         pass

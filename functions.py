@@ -218,7 +218,7 @@ def linux_virtual_machine_script(vm: classes.LinuxVirtualMachine):
 
       admin_ssh_key {{
         username   = "{vm.username}"
-        public_key = file("../ssh_keys/{vm.public_key}.pub")
+        public_key = file("../ssh_keys/{vm.public_key}.pem.pub")
       }}
 
       os_disk {{

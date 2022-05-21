@@ -3,12 +3,12 @@ from pydantic import BaseModel
 
 
 class User(BaseModel):
-    username: Optional[str] = "Username"
+    username: Optional[str] = "username"
 
 
 class Project(BaseModel):
-    username: Optional[str] = "Username"
-    project_name: Optional[str] = "ProjectX"
+    username: Optional[str] = "username"
+    project_name: Optional[str] = "project"
 
 
 class UserAccount(BaseModel):
@@ -27,9 +27,9 @@ class ResourceGroup(BaseModel):
 
 
 class SecurityGroup(BaseModel):
-    name: str
-    rg: str
-    rule_name: Optional[str] = 'PermitInboundWEBandSSH'
+    name: str = 'ExampleSG'
+    rg: str = 'ExampleRG'
+    rule_name: Optional[str] = 'PermitPorts'
     rule_priority_list: Optional[str] = '100,110,120'
     rule_dest_port_range_list: Optional[str] = '22,88,443'
     rule_direction: str = 'Inbound'
@@ -41,14 +41,14 @@ class SecurityGroup(BaseModel):
 
 
 class VirtualNetwork(BaseModel):
-    name: str
-    rg: str
+    name: str = 'VNET-DnD'
+    rg: str = 'ExampleRG'
     cidr_block: str = '10.0.0.0/16'
 
 
 class Subnet(BaseModel):
-    name: str
-    vnet: str
+    name: str = 'ExampleSubnet'
+    vnet: str = 'VNET-DnD'
     cidrblock: str = '10.0.1.0/24'
     resource_group: str = 'ExampleRG'
 
@@ -59,14 +59,13 @@ class NatGateway(BaseModel):
 
 
 class PublicKey(BaseModel):
-    key_name: str = "ExamplePublicKey"
-    public_key: Optional[str] = 'ssh-rsa haNsak192s-anomad9267382nsjkn...'
+    key_name: str = "VMKey"
 
 
 class WindowsVirtualMachine(BaseModel):
-    name: str
-    rg: str
-    nsg: Optional[str] = "ExampleSG"
+    name: str = 'WINSRV'
+    rg: str = 'ExampleRG'
+    nsg: Optional[str] = 'ExampleSG'
     subnet: str = 'ExampleSubnet'
     size: Optional[str] = 'Standard_DS1_v2'
     username: Optional[str] = 'rootuser'
@@ -76,11 +75,11 @@ class WindowsVirtualMachine(BaseModel):
 
 
 class LinuxVirtualMachine(BaseModel):
-    name: str
-    rg: str
+    name: str = 'LNXSRV'
+    rg: str = 'ExampleRG'
     nsg: Optional[str] = "ExampleSG"
     subnet: str = 'ExampleSubnet'
-    public_key: Optional[str] = 'ExamplePublicKey'
+    public_key: Optional[str] = 'VMKey'
     size: Optional[str] = 'Standard_DS1_v2'
     username: Optional[str] = 'rootuser'
     image: Optional[list] = ['Canonical', '0001-com-ubuntu-server-focal', '20_04-lts-gen2', 'latest']

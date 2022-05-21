@@ -4,6 +4,7 @@ from classes import *
 from functions import *
 from provider import provider_block_script
 from fastapi.middleware.cors import CORSMiddleware
+import boto3
 
 app = FastAPI(title="Draw and Deploy API")
 
@@ -22,6 +23,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+session = boto3.Session(profile_name='default')
+s3 = session.resource('s3')
+
+bucket = s3.Bucket('drawanddeploy')
+
+
 @app.post('/api/create_user/')
 def create_user(user: User):
     if not os.path.exists(f'/drawanddeploy/{user.username}/'):
@@ -33,13 +40,13 @@ def create_user(user: User):
         return {"Error": "User already exists!"}
 
 
-@app.delete('/api/delete_user/')
-def delete_user(user: User):
+@app.delete('/api/delete_user/{username}/')
+def delete_user(username):
     try:
-        shutil.rmtree(f'/drawanddeploy/{user.username}')
+        shutil.rmtree(f'/drawanddeploy/{username}')
     except:
         pass
-    os.system(f'aws s3 rm s3://drawanddeploy/{user.username}/ --region=us-east-1 --recursive')
+    os.system(f'aws s3 rm s3://drawanddeploy/{username}/ --region=us-east-1 --recursive')
     return {"Status": "User deleted!"}
 
 
@@ -51,7 +58,10 @@ def get_s3_users():
     for item in range(len(users_list)):
         users_list[item] = users_list[item].strip().replace('\\n','').replace('/','').replace("'",'')
     users_list.pop(0)
-    return users_list
+    try:
+        return users_list
+    except:
+        return {"Error": f"{error}"}
 
 
 @app.get('/api/get_projects/{username}/')
@@ -98,6 +108,7 @@ def delete_existing_project(username, project_name):
 @app.put('/api/edit_existing_project/')
 def edit_existing_project_in_s3(project: Project):
     os.system(f'aws s3 sync s3://drawanddeploy/{project.username}/{project.project_name}/ /drawanddeploy/{project.username}/{project.project_name}/ --region=us-east-1 --exclude "init_project"')
+    os.system(f'aws s3 sync s3://drawanddeploy/{project.username}/ssh_keys/ /drawanddeploy/{project.username}/ssh_keys/ --region=us-east-1')
     return {"Status": "File pulled from S3 Bucket!"}
 
 
@@ -141,27 +152,33 @@ def create_security_group(sg: SecurityGroup, project: Project):
     return {"Status": "Security Group created!"}
 
 
-@app.post('/api/use_ssh_public_key/')
-def use_ssh_public_key(key: PublicKey, project: Project):
-    if not os.path.exists(f'/drawanddeploy/{project.username}/ssh-keys/'):
-        os.makedirs(f'/drawanddeploy/{project.username}/ssh_keys/')
-    ssh_file = open(f'/drawanddeploy/{project.username}/ssh_keys/{key.key_name}', 'w+')
-    ssh_file.write(key.public_key)
-    os.system(f'aws s3 cp /drawanddeploy/{project.username}/ssh_keys/ s3://drawanddeploy/{project.username}/ssh_keys --region=us-east-1 --recursive"')
-    return {"Status": "SSH Public Key set!"}
+@app.get('/api/get_existing_keys/{username}/')
+def get_existing_keys(username):
+    ssh_list = []
+    for object in bucket.objects.filter(Prefix=f'{username}/ssh_keys/'):
+        key_list = str(object).split(f"s3.ObjectSummary(bucket_name='drawanddeploy', key='{username}/ssh_keys/")
+        key = key_list[1].replace("')",'')
+        if '.pub' in key:
+            pass
+        else:
+            ssh_list.append(key)
+    return ssh_list
 
 
-@app.post('/api/create_ssh_public_key/')
-def create_ssh_public_key(key: PublicKey, project: Project):
-    if not os.path.exists(f'/drawanddeploy/{project.username}/ssh_keys/'):
-        os.makedirs(f'/drawanddeploy/{project.username}/ssh_keys/')
-    os.system(f'ssh-keygen -b 2048 -t rsa -f /drawanddeploy/{project.username}/ssh_keys/{key.key_name} -q -N ""')
-    os.system(f'aws s3 cp /drawanddeploy/{project.username}/ssh_keys/ s3://drawanddeploy/{project.username}/ssh_keys --region=us-east-1 --recursive')
-    output = subprocess.Popen(['aws', 's3', 'presign', f's3://drawanddeploy/{project.username}/ssh_keys/{key.key_name}', '--expires-in', '90', '--region=us-east-1'], stdout=subprocess.PIPE)
+@app.post('/api/create_ssh_key/')
+def create_ssh_key(key: PublicKey, user: User):
+    if not os.path.exists(f'/drawanddeploy/{user.username}/ssh_keys/'):
+        os.makedirs(f'/drawanddeploy/{user.username}/ssh_keys/')
+    os.system(f'ssh-keygen -b 2048 -t rsa -f /drawanddeploy/{user.username}/ssh_keys/{key.key_name}.pem -q -N ""')
+    os.system(f'aws s3 cp /drawanddeploy/{user.username}/ssh_keys/ s3://drawanddeploy/{user.username}/ssh_keys --region=us-east-1 --recursive')
+    output = subprocess.Popen(['aws', 's3', 'presign', f's3://drawanddeploy/{user.username}/ssh_keys/{key.key_name}.pem', '--expires-in', '90', '--region=us-east-1'], stdout=subprocess.PIPE)
     response, error = output.communicate()
     temporary_link = str(response)
     temporary_link = temporary_link[2:-3]
-    return {"Link": f"{temporary_link}"}
+    try:
+        return {"Link": f"{temporary_link}"}
+    except:
+        return {"Error": f"{error}"}
 
 
 @app.post('/api/nat_gateway/')
@@ -205,7 +222,10 @@ def apply_infrastructure(project: Project):
     response, error = output.communicate()
     script_link = str(response)
     script_link = script_link[2:-3]
-    return {"Link": f"{script_link}"}
+    try:
+        return {"Link": f"{script_link}"}
+    except:
+        return {"Error": f"{error}"}
 
 
 @app.delete('/api/destroy/{username}/{project_name}/')

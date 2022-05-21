@@ -25,6 +25,9 @@ def security_group_script(sg: classes.SecurityGroup):
       {sg.rule_name}_{sg.rule_direction}_ports_map = {{
     ''')
 
+    sg.rule_dest_port_range_list = sg.rule_dest_port_range_list.split(',')
+    sg.rule_priority_list = sg.rule_priority_list.split(',')
+
     for i in range(len(sg.rule_dest_port_range_list)):
     	sg_script = sg_script + f'    "{sg.rule_priority_list[i]}" : "{sg.rule_dest_port_range_list[i]}", \n'
 

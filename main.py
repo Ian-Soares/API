@@ -85,13 +85,13 @@ def create_new_project(project: Project):
         return {"Error": "You cannot create an project named 'init_project'"}
 
 
-@app.delete('/api/delete_project/')
-def delete_existing_project(project: Project):
+@app.delete('/api/delete_project/{username}/{project_name}/')
+def delete_existing_project(username, project_name):
     try:
-        shutil.rmtree(f'/drawanddeploy/{project.username}/{project.project_name}')
+        shutil.rmtree(f'/drawanddeploy/{username}/{project_name}')
     except:
         pass
-    os.system(f'aws s3 rm s3://drawanddeploy/{project.username}/{project.project_name} --region=us-east-1 --recursive')
+    os.system(f'aws s3 rm s3://drawanddeploy/{username}/{project_name} --region=us-east-1 --recursive')
     return {"Status": "Project deleted!"}
 
 
@@ -103,7 +103,7 @@ def edit_existing_project_in_s3(project: Project):
 
 @app.post('/api/account_credentials/')
 def set_account_credentials(useracc: UserAccount, project: Project):
-    if(useracc.not_student_account):
+    if(useracc.subscription_id == None):
         os.system(f'az login -u {useracc.user_email} -p {useracc.user_password}')
         account_settings = provider_block_script()
     else:
@@ -208,8 +208,8 @@ def apply_infrastructure(project: Project):
     return {"Link": f"{script_link}"}
 
 
-@app.delete('/api/destroy/')
-def destroy_infrastructure(project: Project):
-    os.chdir(f'/drawanddeploy/{project.username}/{project.project_name}/')
+@app.delete('/api/destroy/{username}/{project_name}/')
+def destroy_infrastructure(username, project_name):
+    os.chdir(f'/drawanddeploy/{username}/{project_name}/')
     os.system('terraform apply -destroy --auto-approve')
     return {"Status": "Infrasctructure and files destroyed"}

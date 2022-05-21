@@ -30,8 +30,8 @@ class SecurityGroup(BaseModel):
     name: str
     rg: str
     rule_name: Optional[str] = 'PermitInboundWEBandSSH'
-    rule_priority_list: Optional[list] = ['100','110','120']
-    rule_dest_port_range_list: Optional[list] = ['22','80','443']
+    rule_priority_list: Optional[str] = '100,110,120'
+    rule_dest_port_range_list: Optional[str] = '22,88,443'
     rule_direction: str = 'Inbound'
     rule_access: str = 'Allow'
     rule_protocol: Optional[str] = 'Tcp'

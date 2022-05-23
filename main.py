@@ -233,3 +233,10 @@ def destroy_infrastructure(username, project_name):
     os.chdir(f'/drawanddeploy/{username}/{project_name}/')
     os.system('terraform apply -destroy --auto-approve')
     return {"Status": "Infrasctructure and files destroyed"}
+
+
+@app.delete('/api/clear_script/{username}/{project_name}/')
+def clear_script(username, project_name):
+    with open(f'/drawanddeploy/{username}/{project_name}/main.tf', 'w') as maintf:
+        maintf.write('# Script made by Draw and Deploy')
+    return {"Status":"Script is clear!"}

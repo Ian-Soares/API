@@ -8,20 +8,9 @@ import boto3
 
 app = FastAPI(title="Draw and Deploy API")
 
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:8000",
-    "https://localhost",
-    "https://localhost:8000",
-    "https://localhost:3000",
-    "https://localhost:3001"
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -24,14 +24,14 @@ bucket = s3.Bucket('drawanddeploy')
 
 @app.post('/api/create_user/')
 def create_user(user: User):
-    if not os.path.exists(f'/drawanddeploy/{user.username}/'):
-        os.makedirs(f'/drawanddeploy/{user.username}/init_user/')
-        os.system(f'touch /drawanddeploy/{user.username}/init_user/init.txt')
-        os.system(f'aws s3 cp /drawanddeploy/{user.username}/ s3://drawanddeploy/{user.username}/ --recursive --region=us-east-1')
+    user_lower = user.username.lower()
+    if not os.path.exists(f'/drawanddeploy/{user_lower}/'):
+        os.makedirs(f'/drawanddeploy/{user_lower}/init_user/')
+        os.system(f'touch /drawanddeploy/{user_lower}/init_user/init.txt')
+        os.system(f'aws s3 cp /drawanddeploy/{user_lower}/ s3://drawanddeploy/{user_lower}/ --recursive --region=us-east-1')
         return {"Status": "User created!"}
     else:
         return {"Error": "User already exists!"}
-
 
 @app.delete('/api/delete_user/{username}/')
 def delete_user(username):

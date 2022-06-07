@@ -1,5 +1,7 @@
 import classes
 import textwrap
+import os
+import subprocess
 
 def resource_group_script(rg: classes.ResourceGroup):
     rg_script = textwrap.dedent(f'''
@@ -180,6 +182,19 @@ def windows_virtual_machine_script(vm: classes.LinuxVirtualMachine):
     
     return vm_script
 
+
+def create_ssh_key(username, keyname):
+    if not os.path.exists(f'/drawanddeploy/{username}/ssh_keys/'):
+        os.makedirs(f'/drawanddeploy/{username}/ssh_keys/')
+    os.system(f'ssh-keygen -b 2048 -t rsa -f /drawanddeploy/{username}/ssh_keys/{keyname}-ssh.pem -q -N ""')
+    os.system(f'aws s3 cp /drawanddeploy/{username}/ssh_keys/ s3://drawanddeploy/{username}/ssh_keys --region=us-east-1 --recursive')
+    output = subprocess.Popen(['aws', 's3', 'presign', f's3://drawanddeploy/{username}/ssh_keys/{keyname}-ssh.pem', '--expires-in', '90', '--region=us-east-1'], stdout=subprocess.PIPE)
+    response, error = output.communicate()
+    temporary_link = str(response)
+    temporary_link = temporary_link[2:-3]
+    return temporary_link
+    
+
 def linux_virtual_machine_script(vm: classes.LinuxVirtualMachine):
     vm_script = textwrap.dedent(f'''
 
@@ -218,7 +233,7 @@ def linux_virtual_machine_script(vm: classes.LinuxVirtualMachine):
 
       admin_ssh_key {{
         username   = "{vm.username}"
-        public_key = file("../ssh_keys/{vm.public_key}.pem.pub")
+        public_key = file("../ssh_keys/{vm.name}-ssh.pem.pub")
       }}
 
       os_disk {{

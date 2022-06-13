@@ -58,10 +58,6 @@ class NatGateway(BaseModel):
     resource_group: str
 
 
-class PublicKey(BaseModel):
-    key_name: str = "VMKey"
-
-
 class WindowsVirtualMachine(BaseModel):
     name: str = 'WINSRV'
     rg: str = 'ExampleRG'
@@ -79,7 +75,6 @@ class LinuxVirtualMachine(BaseModel):
     rg: str = 'ExampleRG'
     nsg: Optional[str] = "ExampleSG"
     subnet: str = 'ExampleSubnet'
-    public_key: Optional[str] = 'VMKey'
     size: Optional[str] = 'Standard_DS1_v2'
     username: Optional[str] = 'rootuser'
     image: Optional[list] = ['Canonical', '0001-com-ubuntu-server-focal', '20_04-lts-gen2', 'latest']

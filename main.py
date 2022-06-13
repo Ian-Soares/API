@@ -8,16 +8,9 @@ import boto3
 
 app = FastAPI(title="Draw and Deploy API")
 
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:8000",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,14 +24,14 @@ bucket = s3.Bucket('drawanddeploy')
 
 @app.post('/api/create_user/')
 def create_user(user: User):
-    if not os.path.exists(f'/drawanddeploy/{user.username}/'):
-        os.makedirs(f'/drawanddeploy/{user.username}/init_user/')
-        os.system(f'touch /drawanddeploy/{user.username}/init_user/init.txt')
-        os.system(f'aws s3 cp /drawanddeploy/{user.username}/ s3://drawanddeploy/{user.username}/ --recursive --region=us-east-1')
+    user_lower = user.username.lower()
+    if not os.path.exists(f'/drawanddeploy/{user_lower}/'):
+        os.makedirs(f'/drawanddeploy/{user_lower}/init_user/')
+        os.system(f'touch /drawanddeploy/{user_lower}/init_user/init.txt')
+        os.system(f'aws s3 cp /drawanddeploy/{user_lower}/ s3://drawanddeploy/{user_lower}/ --recursive --region=us-east-1')
         return {"Status": "User created!"}
     else:
         return {"Error": "User already exists!"}
-
 
 @app.delete('/api/delete_user/{username}/')
 def delete_user(username):
@@ -152,41 +145,6 @@ def create_security_group(sg: SecurityGroup, project: Project):
     return {"Status": "Security Group created!"}
 
 
-@app.get('/api/get_existing_keys/{username}/')
-def get_existing_keys(username):
-    ssh_list = []
-    for object in bucket.objects.filter(Prefix=f'{username}/ssh_keys/'):
-        key_list = str(object).split(f"s3.ObjectSummary(bucket_name='drawanddeploy', key='{username}/ssh_keys/")
-        key = key_list[1].replace("')",'')
-        if '.pub' in key:
-            pass
-        else:
-            ssh_list.append(key)
-    return ssh_list
-
-
-@app.post('/api/create_ssh_key/')
-def create_ssh_key(key: PublicKey, user: User):
-    if not os.path.exists(f'/drawanddeploy/{user.username}/ssh_keys/'):
-        os.makedirs(f'/drawanddeploy/{user.username}/ssh_keys/')
-    os.system(f'ssh-keygen -b 2048 -t rsa -f /drawanddeploy/{user.username}/ssh_keys/{key.key_name}.pem -q -N ""')
-    os.system(f'aws s3 cp /drawanddeploy/{user.username}/ssh_keys/ s3://drawanddeploy/{user.username}/ssh_keys --region=us-east-1 --recursive')
-    output = subprocess.Popen(['aws', 's3', 'presign', f's3://drawanddeploy/{user.username}/ssh_keys/{key.key_name}.pem', '--expires-in', '90', '--region=us-east-1'], stdout=subprocess.PIPE)
-    response, error = output.communicate()
-    temporary_link = str(response)
-    temporary_link = temporary_link[2:-3]
-    try:
-        return {"Link": f"{temporary_link}"}
-    except:
-        return {"Error": f"{error}"}
-
-
-@app.post('/api/use_existing_key')
-def use_existing_key(key: PublicKey, user: User):
-    os.system(f'aws s3 cp s3://drawanddeploy/{user.username}/ssh_keys/{key.key_name}.pub /drawanddeploy/{user.username}/ssh_keys/')
-    return {"Status": "Key was pulled!"}
-
-
 @app.post('/api/nat_gateway/')
 def create_nat_gateway(nat_gtw: NatGateway, project: Project):
     terraform_file = open(f'/drawanddeploy/{project.username}/{project.project_name}/main.tf', 'a+')
@@ -203,9 +161,10 @@ def create_virtual_machine(vm: WindowsVirtualMachine, project: Project):
 
 @app.post('/api/linux_virtual_machine/')
 def create_virtual_machine(vm: LinuxVirtualMachine, project: Project):
+    temporary_link = create_ssh_key(project.username, vm.name)
     terraform_file = open(f'/drawanddeploy/{project.username}/{project.project_name}/main.tf', 'a+')
     terraform_file.write(linux_virtual_machine_script(vm))
-    return {"Status": "Virtual Machine created!"}
+    return {"Link": f"{temporary_link}"}
 
 
 @app.get('/api/get_script/{username}/{project}/')
